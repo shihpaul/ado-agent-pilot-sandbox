@@ -1,0 +1,47 @@
+name: pilot-ci
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  python-tests:
+    name: python-tests
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Check out repository without persistent credentials
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.13'
+
+      - name: Enforce two-file scope for pilot pull requests
+        if: github.event_name == 'pull_request'
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+          git diff --name-only --diff-filter=ACDMRT "$BASE_SHA" "$HEAD_SHA" > "$RUNNER_TEMP/pilot-changed-paths.txt"
+          while IFS= read -r file; do
+            case "$file" in
+              whitespace.py|tests/test_whitespace.py) ;;
+              *) echo "Out-of-scope file changed: $file"; exit 1 ;;
+            esac
+          done < "$RUNNER_TEMP/pilot-changed-paths.txt"
+          grep -Fxq 'whitespace.py' "$RUNNER_TEMP/pilot-changed-paths.txt"
+          grep -Fxq 'tests/test_whitespace.py' "$RUNNER_TEMP/pilot-changed-paths.txt"
+
+      - name: Run standard-library unit tests
+        run: python -m unittest discover -s tests -v
