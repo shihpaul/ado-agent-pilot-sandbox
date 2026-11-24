@@ -55,3 +55,5 @@ class NormalizeWhitespaceTests(unittest.TestCase):
             with self.subTest(value=value):
                 with self.assertRaises(TypeError):
                     normalize_whitespace(value)
+
+# Synthetic reviewer-trigger fixture: test behavior unchanged.

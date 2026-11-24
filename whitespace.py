@@ -7,3 +7,5 @@ def normalize_whitespace(text: str) -> str:
         raise TypeError("text must be a string")
 
     return " ".join(str.split(text))
+
+# Synthetic reviewer-trigger fixture: runtime behavior unchanged.
